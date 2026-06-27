@@ -1,0 +1,28 @@
+FROM alpine
+
+RUN apk add --update \
+    make libsamplerate-dev \
+    git \
+    g++ \
+    linux-headers \
+    nlohmann-json \
+    mosquitto-dev \
+    && git clone https://github.com/g4klx/DMRGateway.git \
+    && cd /DMRGateway && make \
+    && make install clean \
+    && apk del make git linux-headers nlohmann-json \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /DMRGateway
+
+
+RUN addgroup -g 1000 mmdvm \
+    && adduser -u 1000 -G mmdvm -s /bin/sh -D mmdvm \
+    && adduser mmdvm dialout \
+    && mkdir /var/log/dmrgateway \
+    && chown -R mmdvm:mmdvm /var/log/dmrgateway
+
+#VOLUME /
+WORKDIR /
+USER mmdvm
+
+CMD ["/usr/local/bin/DMRGateway", "/config/DMRGateway.ini"]

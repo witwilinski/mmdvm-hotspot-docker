@@ -1,0 +1,30 @@
+FROM alpine
+
+RUN apk add --update \
+    make libsamplerate-dev \
+    git \
+    g++ \
+    linux-headers \
+    nlohmann-json \
+    mosquitto-dev \
+    && git clone https://github.com/g4klx/MMDVMHost.git \
+    && cd /MMDVMHost \
+    && sed -e 's/m_hwType(HW_TYPE::UNKNOWN)/m_hwType(HW_TYPE::MMDVM_HS)/' Modem.cpp > Modem.txt \
+    && mv Modem.txt Modem.cpp \
+    && make \
+    && make install clean \
+    && apk del make git linux-headers libsamplerate-dev nlohmann-json \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /MMDVMHost
+
+RUN addgroup -g 1000 mmdvm \
+    && adduser -u 1000 -G mmdvm -s /bin/sh -D mmdvm \
+    && adduser mmdvm dialout \
+    && mkdir /var/log/mmdvm \
+    && chown -R mmdvm:mmdvm /var/log/mmdvm
+
+#VOLUME /
+WORKDIR /
+USER mmdvm
+
+CMD ["/usr/local/bin/MMDVM-Host", "/config/MMDVM.ini"]

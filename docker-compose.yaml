@@ -1,0 +1,36 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    hostname: mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  dmrgateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.dmrgateway
+    container_name: dmrgateway
+    network_mode: "service:mmdvmhost"
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./config/DMRGateway.ini:/config/DMRGateway.ini:ro
+  
+  mmdvmhost:
+    build:
+      context: .
+      dockerfile: Dockerfile.mmdvmhost
+    container_name: mmdvmhost
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./config/MMDVM.ini:/config/MMDVM.ini:ro
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    restart: unless-stopped
+
+volumes:
+  mmdvmhost:
